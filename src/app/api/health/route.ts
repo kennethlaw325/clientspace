@@ -11,6 +11,7 @@ interface HealthStatus {
   checks: {
     database: "ok" | "error";
     stripe: "ok" | "error" | "not_configured";
+    stripe_mode?: "live" | "test" | "unknown";
     resend: "ok" | "error" | "not_configured";
   };
 }
@@ -34,9 +35,10 @@ export async function GET() {
   // 檢查 Stripe 設定
   if (process.env.STRIPE_SECRET_KEY) {
     try {
-      const { getStripe } = await import("@/lib/stripe");
-      await getStripe().paymentMethods.list({ limit: 1 });
+      const { getStripe, getStripeMode } = await import("@/lib/stripe");
+      await getStripe().balance.retrieve();
       checks.stripe = "ok";
+      checks.stripe_mode = getStripeMode();
     } catch {
       checks.stripe = "error";
     }

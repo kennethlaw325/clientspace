@@ -4,14 +4,32 @@ let _stripe: Stripe | null = null;
 
 export function getStripe(): Stripe {
   if (!_stripe) {
-    if (!process.env.STRIPE_SECRET_KEY) {
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) {
       throw new Error("STRIPE_SECRET_KEY is not set");
     }
-    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+
+    // 生產環境安全檢查：防止誤用 test mode keys
+    if (process.env.NODE_ENV === "production" && secretKey.startsWith("sk_test_")) {
+      console.warn(
+        "[Stripe] WARNING: Using test mode secret key in production environment. " +
+        "Please switch to live mode keys (sk_live_...) before going live."
+      );
+    }
+
+    _stripe = new Stripe(secretKey, {
       apiVersion: "2026-02-25.clover",
     });
   }
   return _stripe;
+}
+
+/** 回傳目前 Stripe key 模式（live / test / unknown） */
+export function getStripeMode(): "live" | "test" | "unknown" {
+  const key = process.env.STRIPE_SECRET_KEY ?? "";
+  if (key.startsWith("sk_live_")) return "live";
+  if (key.startsWith("sk_test_")) return "test";
+  return "unknown";
 }
 
 /** @deprecated Use getStripe() instead */
