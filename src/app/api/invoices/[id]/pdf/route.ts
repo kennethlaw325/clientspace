@@ -27,7 +27,7 @@ export async function GET(
     .from("workspaces")
     .select("name")
     .eq("id", invoice.workspace_id)
-    .single();
+    .single() as { data: { name: string } | null };
 
   const workspaceName = workspace?.name ?? "ClientSpace";
 

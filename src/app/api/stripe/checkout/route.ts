@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       .from("workspaces")
       .select("id, name")
       .eq("owner_id", user.id)
-      .single();
+      .single() as { data: { id: string; name: string } | null };
     if (!workspace) return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
 
     // Get or create Stripe customer
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       .from("subscriptions")
       .select("stripe_customer_id, stripe_subscription_id")
       .eq("workspace_id", workspace.id)
-      .single();
+      .single() as { data: { stripe_customer_id: string | null; stripe_subscription_id: string | null } | null };
 
     let customerId = sub?.stripe_customer_id;
     if (!customerId) {

@@ -47,3 +47,55 @@ export async function sendNotification({
     `,
   });
 }
+
+// ─────────────────────────────────────────────
+// Review 審核通知（通知 Freelancer 客戶已審核）
+// ─────────────────────────────────────────────
+
+interface ReviewNotificationParams {
+  to: string;
+  recipientName: string;
+  workspaceName: string;
+  projectName: string;
+  reviewTitle: string;
+  status: "approved" | "revision_requested";
+  clientName: string;
+  reviewUrl: string;
+}
+
+export async function sendReviewNotification({
+  to,
+  recipientName,
+  workspaceName,
+  projectName,
+  reviewTitle,
+  status,
+  clientName,
+  reviewUrl,
+}: ReviewNotificationParams) {
+  const isApproved = status === "approved";
+  const subject = isApproved
+    ? `✅ "${reviewTitle}" approved by ${clientName}`
+    : `🔄 "${reviewTitle}" revision requested by ${clientName}`;
+
+  const actionText = isApproved
+    ? `<strong>${clientName}</strong> has approved your deliverable.`
+    : `<strong>${clientName}</strong> has requested revisions on your deliverable.`;
+
+  await getResend().emails.send({
+    from: `${workspaceName} via ClientSpace <noreply@clientspace.io>`,
+    to,
+    subject,
+    html: `
+      <h2>Hi ${recipientName},</h2>
+      <p>Project: <strong>${projectName}</strong></p>
+      <p>Deliverable: <strong>${reviewTitle}</strong></p>
+      <p>${actionText}</p>
+      <p>
+        <a href="${reviewUrl}" style="background:#6366f1;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">
+          View Review
+        </a>
+      </p>
+    `,
+  });
+}

@@ -510,6 +510,120 @@ export type Database = {
           },
         ];
       };
+      deliverable_reviews: {
+        Row: {
+          id: string;
+          project_id: string;
+          title: string;
+          description: string | null;
+          file_url: string | null;
+          file_type: string | null;
+          status: "pending_review" | "approved" | "revision_requested";
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          title: string;
+          description?: string | null;
+          file_url?: string | null;
+          file_type?: string | null;
+          status?: "pending_review" | "approved" | "revision_requested";
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          title?: string;
+          description?: string | null;
+          file_url?: string | null;
+          file_type?: string | null;
+          status?: "pending_review" | "approved" | "revision_requested";
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "deliverable_reviews_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      review_comments: {
+        Row: {
+          id: string;
+          review_id: string;
+          author_type: "freelancer" | "client";
+          author_name: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          review_id: string;
+          author_type: "freelancer" | "client";
+          author_name: string;
+          body: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          review_id?: string;
+          author_type?: "freelancer" | "client";
+          author_name?: string;
+          body?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "review_comments_review_id_fkey";
+            columns: ["review_id"];
+            isOneToOne: false;
+            referencedRelation: "deliverable_reviews";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      review_tokens: {
+        Row: {
+          id: string;
+          review_id: string;
+          token: string;
+          expires_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          review_id: string;
+          token?: string;
+          expires_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          review_id?: string;
+          token?: string;
+          expires_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "review_tokens_review_id_fkey";
+            columns: ["review_id"];
+            isOneToOne: false;
+            referencedRelation: "deliverable_reviews";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -529,3 +643,6 @@ export type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
 export type ActivityLog = Database["public"]["Tables"]["activity_logs"]["Row"];
 export type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
 export type InvoiceItem = Database["public"]["Tables"]["invoice_items"]["Row"];
+export type DeliverableReview = Database["public"]["Tables"]["deliverable_reviews"]["Row"];
+export type ReviewComment = Database["public"]["Tables"]["review_comments"]["Row"];
+export type ReviewToken = Database["public"]["Tables"]["review_tokens"]["Row"];
