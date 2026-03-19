@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { DollarSign, Clock, FolderOpen, Users, AlertTriangle } from "lucide-react";
 import { getDashboardData } from "@/lib/actions/dashboard";
+import { getMonthlyTimeSummary } from "@/lib/actions/time-entries";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { PendingItems } from "@/components/dashboard/pending-items";
@@ -19,7 +20,10 @@ function formatCurrency(amount: number): string {
 }
 
 export default async function DashboardPage() {
-  const { stats, recentActivity, pendingItems } = await getDashboardData();
+  const [{ stats, recentActivity, pendingItems }, monthlyTime] = await Promise.all([
+    getDashboardData(),
+    getMonthlyTimeSummary(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -59,6 +63,50 @@ export default async function DashboardPage() {
           iconColor="text-purple-600"
         />
       </div>
+
+      {/* 本月工時摘要 */}
+      {monthlyTime.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              本月工時摘要
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-3">
+              {monthlyTime.map((item) => {
+                const hours = (item.totalMinutes / 60).toFixed(1);
+                const budgetPct =
+                  item.budgetAmount && item.budgetType === "hourly"
+                    ? Math.min(((item.totalMinutes / 60) / item.budgetAmount) * 100, 100)
+                    : item.budgetAmount && item.budgetType === "fixed"
+                    ? Math.min((item.totalAmount / item.budgetAmount) * 100, 100)
+                    : null;
+                return (
+                  <div key={item.projectId}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="font-medium">{item.name}</span>
+                      <span className="text-muted-foreground">
+                        {hours}h · ${item.totalAmount.toFixed(0)}
+                        {budgetPct !== null && ` · ${budgetPct.toFixed(0)}%`}
+                      </span>
+                    </div>
+                    {budgetPct !== null && (
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${budgetPct >= 100 ? "bg-red-500" : budgetPct >= 80 ? "bg-amber-500" : "bg-blue-500"}`}
+                          style={{ width: `${budgetPct}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* 最近活動 */}

@@ -120,6 +120,8 @@ export type Database = {
           max_revisions: number
           used_revisions: number
           due_date: string | null
+          budget_amount: number | null
+          budget_type: "fixed" | "hourly" | null
           created_at: string
           updated_at: string
         }
@@ -133,6 +135,8 @@ export type Database = {
           max_revisions?: number
           used_revisions?: number
           due_date?: string | null
+          budget_amount?: number | null
+          budget_type?: "fixed" | "hourly" | null
           created_at?: string
           updated_at?: string
         }
@@ -146,6 +150,8 @@ export type Database = {
           max_revisions?: number
           used_revisions?: number
           due_date?: string | null
+          budget_amount?: number | null
+          budget_type?: "fixed" | "hourly" | null
           created_at?: string
           updated_at?: string
         }
@@ -684,6 +690,57 @@ export type Database = {
         }
         Relationships: []
       }
+      time_entries: {
+        Row: {
+          id: string
+          workspace_id: string
+          project_id: string
+          description: string
+          duration_minutes: number
+          hourly_rate: number
+          date: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          project_id: string
+          description: string
+          duration_minutes: number
+          hourly_rate?: number
+          date?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          project_id?: string
+          description?: string
+          duration_minutes?: number
+          hourly_rate?: number
+          date?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -715,3 +772,4 @@ export type DeliverableReview = Database["public"]["Tables"]["deliverable_review
 export type ReviewComment = Database["public"]["Tables"]["review_comments"]["Row"]
 export type ReviewToken = Database["public"]["Tables"]["review_tokens"]["Row"]
 export type NotificationPreferenceRow = Database["public"]["Tables"]["notification_preferences"]["Row"]
+export type TimeEntry = Database["public"]["Tables"]["time_entries"]["Row"]

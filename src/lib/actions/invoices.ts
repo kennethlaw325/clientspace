@@ -519,6 +519,28 @@ export async function generateRecurringInvoices(): Promise<{ generated: number; 
   return { generated, errors };
 }
 
+export async function getTimeEntriesForInvoice(projectId: string): Promise<InvoiceItemInput[]> {
+  const supabase = await createClient();
+  const workspace = await getWorkspace();
+  if (!workspace) return [];
+
+  const { data } = await supabase
+    .from("time_entries")
+    .select("description, duration_minutes, hourly_rate, date")
+    .eq("workspace_id", workspace.id)
+    .eq("project_id", projectId)
+    .order("date", { ascending: true });
+
+  if (!data) return [];
+
+  return data.map((entry, index) => ({
+    description: `${entry.description} (${(entry.duration_minutes / 60).toFixed(2)}h on ${entry.date})`,
+    quantity: parseFloat((entry.duration_minutes / 60).toFixed(2)),
+    unit_price: entry.hourly_rate,
+    sort_order: index,
+  }));
+}
+
 export async function getRecurringHistory(parentId: string) {
   const supabase = await createClient();
   const { data } = await supabase

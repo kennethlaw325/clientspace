@@ -3,7 +3,7 @@ import { getProject } from "@/lib/actions/projects";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
-import { ArrowLeft, Calendar, FileText, MessageSquare, Layers, RefreshCw, CheckSquare } from "lucide-react";
+import { ArrowLeft, Calendar, FileText, MessageSquare, Layers, RefreshCw, CheckSquare, Clock } from "lucide-react";
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -82,6 +82,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           >
             <CheckSquare className="h-4 w-4" />
             Reviews
+          </Link>
+          <Link
+            href={`/projects/${id}/time`}
+            className="inline-flex items-center gap-1.5 border-b-2 border-transparent px-1 pb-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Clock className="h-4 w-4" />
+            Time
           </Link>
         </nav>
       </div>
