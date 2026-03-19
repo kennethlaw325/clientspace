@@ -40,8 +40,13 @@ const mockUser = { id: "user-123", email: "freelancer@test.com" };
 const mockWorkspace = {
   id: "ws-1",
   name: "Test Workspace",
-  plan: "pro",
+  slug: "test-workspace",
+  logo_url: null,
+  brand_color: "#6366f1",
+  plan: "pro" as const,
   owner_id: "user-123",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
 };
 
 const mockSupabase = {
