@@ -69,8 +69,30 @@ export async function POST(req: NextRequest) {
 
   try {
     switch (event.type) {
+      case "payment_intent.succeeded": {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        const invoiceId = paymentIntent.metadata?.invoice_id;
+        if (invoiceId) {
+          await admin.from("invoices").update({
+            status: "paid",
+            stripe_payment_intent_id: paymentIntent.id,
+          }).eq("id", invoiceId);
+        }
+        break;
+      }
+
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+
+        // Invoice one-time payment
+        if (session.mode === "payment") {
+          const invoiceId = session.metadata?.invoice_id;
+          if (invoiceId && session.payment_status === "paid") {
+            await admin.from("invoices").update({ status: "paid" }).eq("id", invoiceId);
+          }
+          break;
+        }
+
         if (session.mode !== "subscription") break;
 
         const workspaceId = session.metadata?.workspace_id;

@@ -361,6 +361,111 @@ export type Database = {
           },
         ];
       };
+      invoices: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          client_id: string;
+          project_id: string | null;
+          invoice_number: string;
+          status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
+          due_date: string | null;
+          tax_rate: number;
+          notes: string | null;
+          stripe_payment_link: string | null;
+          stripe_payment_intent_id: string | null;
+          total_amount: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          client_id: string;
+          project_id?: string | null;
+          invoice_number: string;
+          status?: "draft" | "sent" | "paid" | "overdue" | "cancelled";
+          due_date?: string | null;
+          tax_rate?: number;
+          notes?: string | null;
+          stripe_payment_link?: string | null;
+          stripe_payment_intent_id?: string | null;
+          total_amount?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          client_id?: string;
+          project_id?: string | null;
+          invoice_number?: string;
+          status?: "draft" | "sent" | "paid" | "overdue" | "cancelled";
+          due_date?: string | null;
+          tax_rate?: number;
+          notes?: string | null;
+          stripe_payment_link?: string | null;
+          stripe_payment_intent_id?: string | null;
+          total_amount?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invoices_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoices_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      invoice_items: {
+        Row: {
+          id: string;
+          invoice_id: string;
+          description: string;
+          quantity: number;
+          unit_price: number;
+          amount: number;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          invoice_id: string;
+          description: string;
+          quantity?: number;
+          unit_price?: number;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          invoice_id?: string;
+          description?: string;
+          quantity?: number;
+          unit_price?: number;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey";
+            columns: ["invoice_id"];
+            isOneToOne: false;
+            referencedRelation: "invoices";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       activity_logs: {
         Row: {
           id: string;
@@ -422,3 +527,5 @@ export type FileRecord = Database["public"]["Tables"]["files"]["Row"];
 export type Message = Database["public"]["Tables"]["messages"]["Row"];
 export type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
 export type ActivityLog = Database["public"]["Tables"]["activity_logs"]["Row"];
+export type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
+export type InvoiceItem = Database["public"]["Tables"]["invoice_items"]["Row"];
