@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sheet";
 
 const navItems = [
+  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/projects", label: "Projects", icon: FolderOpen },
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/invoices", label: "Invoices", icon: FileText },
@@ -39,7 +40,7 @@ export function MobileSidebar() {
         <div className="p-4 flex flex-col h-full">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <Link
-            href="/projects"
+            href="/dashboard"
             className="flex items-center gap-2 px-3 py-2 mb-6"
             onClick={() => setOpen(false)}
           >

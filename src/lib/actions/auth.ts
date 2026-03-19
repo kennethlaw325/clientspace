@@ -53,7 +53,7 @@ export async function signIn(formData: FormData) {
     return { error: error.message };
   }
 
-  redirect("/projects");
+  redirect("/dashboard");
 }
 
 export async function signOut() {

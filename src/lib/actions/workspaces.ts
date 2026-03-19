@@ -44,7 +44,7 @@ export async function createWorkspace(formData: FormData) {
     return { error: error.message };
   }
 
-  redirect("/projects");
+  redirect("/dashboard");
 }
 
 export async function updateWorkspace(formData: FormData) {

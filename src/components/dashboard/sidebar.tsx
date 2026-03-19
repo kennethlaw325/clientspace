@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { FolderOpen, Users, Settings, LayoutDashboard, CreditCard, FileText } from "lucide-react";
 
 const navItems = [
+  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/projects", label: "Projects", icon: FolderOpen },
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/invoices", label: "Invoices", icon: FileText },
@@ -18,7 +19,7 @@ export function Sidebar() {
 
   return (
     <aside className="hidden md:flex w-64 border-r bg-white min-h-screen p-4 flex-col">
-      <Link href="/projects" className="flex items-center gap-2 px-3 py-2 mb-6">
+      <Link href="/dashboard" className="flex items-center gap-2 px-3 py-2 mb-6">
         <LayoutDashboard className="h-6 w-6 text-indigo-500" />
         <span className="text-xl font-bold">
           Client<span className="text-indigo-500">Space</span>
