@@ -430,6 +430,11 @@ export type Database = {
           stripe_payment_link: string | null
           stripe_payment_intent_id: string | null
           total_amount: number
+          is_recurring: boolean
+          recurring_frequency: "monthly" | "quarterly" | "yearly" | null
+          recurring_next_date: string | null
+          recurring_end_date: string | null
+          recurring_parent_id: string | null
           created_at: string
           updated_at: string
         }
@@ -446,6 +451,11 @@ export type Database = {
           stripe_payment_link?: string | null
           stripe_payment_intent_id?: string | null
           total_amount?: number
+          is_recurring?: boolean
+          recurring_frequency?: "monthly" | "quarterly" | "yearly" | null
+          recurring_next_date?: string | null
+          recurring_end_date?: string | null
+          recurring_parent_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -462,6 +472,11 @@ export type Database = {
           stripe_payment_link?: string | null
           stripe_payment_intent_id?: string | null
           total_amount?: number
+          is_recurring?: boolean
+          recurring_frequency?: "monthly" | "quarterly" | "yearly" | null
+          recurring_next_date?: string | null
+          recurring_end_date?: string | null
+          recurring_parent_id?: string | null
           created_at?: string
           updated_at?: string
         }

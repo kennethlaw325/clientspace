@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,6 +56,12 @@ export function InvoiceForm({ clients, projects, invoice }: InvoiceFormProps) {
       : [emptyItem()]
   );
   const [taxRate, setTaxRate] = useState(invoice?.tax_rate ?? 0);
+  const [isRecurring, setIsRecurring] = useState(invoice?.is_recurring ?? false);
+  const [recurringFrequency, setRecurringFrequency] = useState<"monthly" | "quarterly" | "yearly">(
+    (invoice?.recurring_frequency as "monthly" | "quarterly" | "yearly") ?? "monthly"
+  );
+  const [recurringNextDate, setRecurringNextDate] = useState(invoice?.recurring_next_date ?? "");
+  const [recurringEndDate, setRecurringEndDate] = useState(invoice?.recurring_end_date ?? "");
 
   const subtotal = items.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
   const taxAmount = subtotal * (taxRate / 100);
@@ -80,6 +86,10 @@ export function InvoiceForm({ clients, projects, invoice }: InvoiceFormProps) {
     const formData = new FormData(e.currentTarget);
     formData.set("items", JSON.stringify(items));
     formData.set("tax_rate", String(taxRate));
+    formData.set("is_recurring", String(isRecurring));
+    formData.set("recurring_frequency", recurringFrequency);
+    formData.set("recurring_next_date", recurringNextDate);
+    formData.set("recurring_end_date", recurringEndDate);
 
     startTransition(async () => {
       if (invoice) {
@@ -163,6 +173,72 @@ export function InvoiceForm({ clients, projects, invoice }: InvoiceFormProps) {
             onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
           />
         </div>
+      </div>
+
+      {/* Recurring Invoice */}
+      <div className="border rounded-lg p-4 space-y-4">
+        <div className="flex items-center gap-3">
+          <RefreshCw className="h-4 w-4 text-indigo-500" />
+          <span className="font-medium text-sm">Recurring Invoice</span>
+          <label className="ml-auto flex items-center gap-2 cursor-pointer">
+            <span className="text-sm text-slate-500">{isRecurring ? "Enabled" : "Disabled"}</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isRecurring}
+              onClick={() => setIsRecurring((v) => !v)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                isRecurring ? "bg-indigo-600" : "bg-slate-200"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  isRecurring ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </label>
+        </div>
+
+        {isRecurring && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label>Frequency</Label>
+              <Select
+                value={recurringFrequency}
+                onValueChange={(v) => setRecurringFrequency(v as "monthly" | "quarterly" | "yearly")}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="quarterly">Quarterly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="recurring_next_date">Next Invoice Date *</Label>
+              <Input
+                id="recurring_next_date"
+                type="date"
+                value={recurringNextDate}
+                onChange={(e) => setRecurringNextDate(e.target.value)}
+                required={isRecurring}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="recurring_end_date">End Date (optional)</Label>
+              <Input
+                id="recurring_end_date"
+                type="date"
+                value={recurringEndDate}
+                onChange={(e) => setRecurringEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Line Items */}

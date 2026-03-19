@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { Plus, FileText } from "lucide-react";
+import { Plus, FileText, RefreshCw } from "lucide-react";
 import { getInvoices } from "@/lib/actions/invoices";
 import { getClients } from "@/lib/actions/clients";
 import { Button } from "@/components/ui/button";
@@ -107,7 +107,15 @@ export default async function InvoicesPage({
               <Link key={invoice.id} href={`/invoices/${invoice.id}`}>
                 <div className="border rounded-lg bg-white p-4 hover:shadow-sm transition-shadow">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-indigo-600">{invoice.invoice_number}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-indigo-600">{invoice.invoice_number}</span>
+                      {invoice.is_recurring && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700">
+                          <RefreshCw className="h-3 w-3" />
+                          Recurring
+                        </span>
+                      )}
+                    </div>
                     <InvoiceStatusBadge
                       status={invoice.status as "draft" | "sent" | "paid" | "overdue" | "cancelled"}
                     />
@@ -142,12 +150,20 @@ export default async function InvoicesPage({
                     className="hover:bg-slate-50 transition-colors"
                   >
                     <td className="px-4 py-3">
-                      <Link
-                        href={`/invoices/${invoice.id}`}
-                        className="font-medium text-indigo-600 hover:text-indigo-800"
-                      >
-                        {invoice.invoice_number}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/invoices/${invoice.id}`}
+                          className="font-medium text-indigo-600 hover:text-indigo-800"
+                        >
+                          {invoice.invoice_number}
+                        </Link>
+                        {invoice.is_recurring && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700">
+                            <RefreshCw className="h-3 w-3" />
+                            Recurring
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-slate-700">
                       {invoice.clients?.name ?? "—"}

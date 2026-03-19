@@ -99,7 +99,15 @@ export async function createInvoice(formData: FormData) {
   const notes = formData.get("notes") as string | null;
   const itemsJson = formData.get("items") as string;
 
+  // Recurring fields
+  const isRecurring = formData.get("is_recurring") === "true";
+  const recurringFrequency = (formData.get("recurring_frequency") as "monthly" | "quarterly" | "yearly" | null) || null;
+  const recurringNextDate = formData.get("recurring_next_date") as string | null;
+  const recurringEndDate = formData.get("recurring_end_date") as string | null;
+
   if (!clientId) return { error: "Client is required" };
+  if (isRecurring && !recurringFrequency) return { error: "Recurring frequency is required" };
+  if (isRecurring && !recurringNextDate) return { error: "Next invoice date is required for recurring invoices" };
 
   let items: InvoiceItemInput[] = [];
   try {
@@ -124,6 +132,10 @@ export async function createInvoice(formData: FormData) {
       tax_rate: taxRate,
       notes: notes || null,
       total_amount: totalAmount,
+      is_recurring: isRecurring,
+      recurring_frequency: isRecurring ? recurringFrequency : null,
+      recurring_next_date: isRecurring ? (recurringNextDate || null) : null,
+      recurring_end_date: isRecurring ? (recurringEndDate || null) : null,
     })
     .select()
     .single();
@@ -153,6 +165,12 @@ export async function updateInvoice(id: string, formData: FormData) {
   const notes = formData.get("notes") as string | null;
   const itemsJson = formData.get("items") as string;
 
+  // Recurring fields
+  const isRecurring = formData.get("is_recurring") === "true";
+  const recurringFrequency = (formData.get("recurring_frequency") as "monthly" | "quarterly" | "yearly" | null) || null;
+  const recurringNextDate = formData.get("recurring_next_date") as string | null;
+  const recurringEndDate = formData.get("recurring_end_date") as string | null;
+
   let items: InvoiceItemInput[] = [];
   try {
     items = JSON.parse(itemsJson);
@@ -169,6 +187,10 @@ export async function updateInvoice(id: string, formData: FormData) {
       tax_rate: taxRate,
       notes: notes || null,
       total_amount: totalAmount,
+      is_recurring: isRecurring,
+      recurring_frequency: isRecurring ? recurringFrequency : null,
+      recurring_next_date: isRecurring ? (recurringNextDate || null) : null,
+      recurring_end_date: isRecurring ? (recurringEndDate || null) : null,
     })
     .eq("id", id);
 
@@ -364,4 +386,145 @@ export async function markInvoicePaid(id: string) {
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
   return { success: true };
+}
+
+// ─── Recurring Invoice Generation ─────────────────────────────────────────────
+
+function addFrequency(date: Date, frequency: "monthly" | "quarterly" | "yearly"): Date {
+  const next = new Date(date);
+  if (frequency === "monthly") next.setMonth(next.getMonth() + 1);
+  else if (frequency === "quarterly") next.setMonth(next.getMonth() + 3);
+  else if (frequency === "yearly") next.setFullYear(next.getFullYear() + 1);
+  return next;
+}
+
+export async function generateRecurringInvoices(): Promise<{ generated: number; errors: string[] }> {
+  const admin = createAdminClient();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().split("T")[0];
+
+  // Fetch all recurring invoices due today or earlier
+  const { data: dueInvoices, error } = await admin
+    .from("invoices")
+    .select("*, invoice_items(*), clients(name, email), workspaces(name, owner_id)")
+    .eq("is_recurring", true)
+    .lte("recurring_next_date", todayStr)
+    .not("recurring_next_date", "is", null);
+
+  if (error || !dueInvoices) return { generated: 0, errors: [error?.message ?? "Query failed"] };
+
+  const errors: string[] = [];
+  let generated = 0;
+
+  for (const parent of dueInvoices) {
+    try {
+      // Skip if past end date
+      if (parent.recurring_end_date && parent.recurring_end_date < todayStr) {
+        await admin
+          .from("invoices")
+          .update({ is_recurring: false, recurring_next_date: null })
+          .eq("id", parent.id);
+        continue;
+      }
+
+      const frequency = parent.recurring_frequency as "monthly" | "quarterly" | "yearly";
+
+      // Count existing invoices for new number
+      const { count } = await admin
+        .from("invoices")
+        .select("*", { count: "exact", head: true })
+        .eq("workspace_id", parent.workspace_id);
+      const newInvoiceNumber = `INV-${String((count ?? 0) + 1).padStart(4, "0")}`;
+
+      // Calculate new due_date based on offset from recurring_next_date
+      let newDueDate: string | null = null;
+      if (parent.due_date && parent.recurring_next_date) {
+        const parentDue = new Date(parent.due_date);
+        const parentNext = new Date(parent.recurring_next_date);
+        const offsetDays = Math.round((parentDue.getTime() - parentNext.getTime()) / (1000 * 60 * 60 * 24));
+        const newDueDateObj = new Date(today);
+        newDueDateObj.setDate(newDueDateObj.getDate() + offsetDays);
+        newDueDate = newDueDateObj.toISOString().split("T")[0];
+      }
+
+      // Create the new invoice
+      const { data: newInvoice, error: createError } = await admin
+        .from("invoices")
+        .insert({
+          workspace_id: parent.workspace_id,
+          client_id: parent.client_id,
+          project_id: parent.project_id,
+          invoice_number: newInvoiceNumber,
+          status: "draft" as const,
+          due_date: newDueDate,
+          tax_rate: parent.tax_rate,
+          notes: parent.notes,
+          total_amount: parent.total_amount,
+          is_recurring: false,
+          recurring_parent_id: parent.id,
+        })
+        .select()
+        .single();
+
+      if (createError || !newInvoice) {
+        errors.push(`Failed to create invoice from ${parent.invoice_number}: ${createError?.message}`);
+        continue;
+      }
+
+      // Copy line items
+      const itemRows = (parent.invoice_items as InvoiceItemRow[]).map((item, idx) => ({
+        invoice_id: newInvoice.id,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        sort_order: idx,
+      }));
+      await admin.from("invoice_items").insert(itemRows);
+
+      // Update parent's next recurring date
+      const nextDate = addFrequency(new Date(parent.recurring_next_date!), frequency);
+      await admin
+        .from("invoices")
+        .update({ recurring_next_date: nextDate.toISOString().split("T")[0] })
+        .eq("id", parent.id);
+
+      // Send notification email to client
+      type WorkspaceRef = { name: string; owner_id: string } | null;
+      type ClientRef = { name: string; email: string } | null;
+      const workspace = parent.workspaces as unknown as WorkspaceRef;
+      const client = parent.clients as unknown as ClientRef;
+      if (client?.email && workspace?.name) {
+        try {
+          await sendInvoiceSentEmail({
+            to: client.email,
+            recipientName: client.name,
+            workspaceName: workspace.name,
+            invoiceNumber: newInvoiceNumber,
+            amount: `$${parent.total_amount.toFixed(2)}`,
+            dueDate: newDueDate ?? undefined,
+          });
+        } catch {
+          // Email 失敗不阻止主流程
+        }
+      }
+
+      generated++;
+    } catch (err) {
+      errors.push(`Error processing ${parent.invoice_number}: ${String(err)}`);
+    }
+  }
+
+  revalidatePath("/invoices");
+  return { generated, errors };
+}
+
+export async function getRecurringHistory(parentId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("invoices")
+    .select("id, invoice_number, status, total_amount, created_at, due_date")
+    .eq("recurring_parent_id", parentId)
+    .order("created_at", { ascending: false });
+  return data ?? [];
 }
