@@ -3,9 +3,9 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Send, Download, Edit, Trash2, CheckCircle, ExternalLink } from "lucide-react";
+import { Send, Download, Edit, Trash2, CheckCircle, ExternalLink, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { sendInvoice, deleteInvoice, markInvoicePaid } from "@/lib/actions/invoices";
+import { sendInvoice, deleteInvoice, markInvoicePaid, sendPaymentReminder } from "@/lib/actions/invoices";
 
 interface InvoiceActionsProps {
   invoiceId: string;
@@ -43,6 +43,17 @@ export function InvoiceActions({
       } else {
         toast.success("Invoice marked as paid");
         router.refresh();
+      }
+    });
+  }
+
+  function handleSendReminder() {
+    startTransition(async () => {
+      const result = await sendPaymentReminder(invoiceId);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Payment reminder sent to client");
       }
     });
   }
@@ -87,7 +98,7 @@ export function InvoiceActions({
         </Button>
       )}
 
-      {status === "sent" && (
+      {(status === "sent" || status === "overdue") && (
         <Button
           variant="outline"
           size="sm"
@@ -97,6 +108,19 @@ export function InvoiceActions({
         >
           <CheckCircle className="h-4 w-4 mr-1.5" />
           Mark as Paid
+        </Button>
+      )}
+
+      {(status === "sent" || status === "overdue") && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-orange-600 border-orange-300 hover:bg-orange-50"
+          onClick={handleSendReminder}
+          disabled={isPending}
+        >
+          <Bell className="h-4 w-4 mr-1.5" />
+          Send Reminder
         </Button>
       )}
 

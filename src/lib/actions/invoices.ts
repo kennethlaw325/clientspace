@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getWorkspace } from "./workspaces";
 import { getStripe } from "@/lib/stripe";
 import { sendNotification } from "@/lib/email";
-import { sendInvoiceSentEmail, sendPaymentReceivedEmail } from "@/lib/notifications";
+import { sendInvoiceSentEmail, sendPaymentReceivedEmail, sendPaymentReminderEmail } from "@/lib/notifications";
 import type { Database } from "@/types/database";
 
 type InvoiceRow = Database["public"]["Tables"]["invoices"]["Row"];
@@ -273,6 +273,52 @@ export async function deleteInvoice(id: string) {
   const { error } = await supabase.from("invoices").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/invoices");
+  return { success: true };
+}
+
+export async function sendPaymentReminder(id: string) {
+  const supabase = await createClient();
+  const workspace = await getWorkspace();
+  if (!workspace) return { error: "No workspace found" };
+
+  const invoice = await getInvoice(id);
+  if (!invoice) return { error: "Invoice not found" };
+  if (!invoice.clients) return { error: "Client not found" };
+  if (invoice.status !== "sent" && invoice.status !== "overdue") {
+    return { error: "Can only send reminders for sent or overdue invoices" };
+  }
+
+  try {
+    await sendPaymentReminderEmail({
+      to: invoice.clients.email,
+      recipientName: invoice.clients.name,
+      workspaceName: workspace.name,
+      invoiceNumber: invoice.invoice_number,
+      amount: `$${invoice.total_amount.toFixed(2)}`,
+      dueDate: invoice.due_date ?? undefined,
+      projectName: invoice.projects?.name,
+      paymentLink: invoice.stripe_payment_link ?? undefined,
+    });
+  } catch (err) {
+    console.error("Payment reminder email failed:", err);
+    return { error: "Failed to send reminder email" };
+  }
+
+  // 記錄提醒發送時間到 activity_log
+  await supabase.from("activity_logs").insert({
+    workspace_id: workspace.id,
+    client_id: invoice.client_id,
+    project_id: invoice.project_id,
+    actor_type: "freelancer",
+    event_type: "invoice_reminder_sent",
+    metadata: {
+      invoice_id: id,
+      invoice_number: invoice.invoice_number,
+      sent_at: new Date().toISOString(),
+    },
+  });
+
+  revalidatePath(`/invoices/${id}`);
   return { success: true };
 }
 

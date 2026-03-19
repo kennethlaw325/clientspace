@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import { render } from "@react-email/components";
 import { InvoiceSentEmail } from "@/components/emails/invoice-sent";
 import { PaymentReceivedEmail } from "@/components/emails/payment-received";
+import { PaymentReminderEmail } from "@/components/emails/payment-reminder";
 import { ReviewRequestedEmail } from "@/components/emails/review-requested";
 import { DeliverableApprovedEmail } from "@/components/emails/deliverable-approved";
 import { RevisionRequestedEmail } from "@/components/emails/revision-requested";
@@ -180,6 +181,27 @@ export async function sendWelcomeEmail(params: WelcomeParams) {
     from: `ClientSpace <noreply@clientspace.io>`,
     to: params.to,
     subject: "Welcome to ClientSpace",
+    html,
+  });
+}
+
+interface PaymentReminderParams {
+  to: string;
+  recipientName: string;
+  workspaceName: string;
+  invoiceNumber: string;
+  amount: string;
+  dueDate?: string;
+  projectName?: string;
+  paymentLink?: string;
+}
+
+export async function sendPaymentReminderEmail(params: PaymentReminderParams) {
+  const html = await render(PaymentReminderEmail({ ...params }));
+  await getResend().emails.send({
+    from: `${params.workspaceName} via ClientSpace <noreply@clientspace.io>`,
+    to: params.to,
+    subject: `Payment reminder: Invoice ${params.invoiceNumber} is overdue`,
     html,
   });
 }
