@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendReviewNotification } from "@/lib/email";
+import { sendDeliverableApprovedEmail, sendRevisionRequestedEmail } from "@/lib/notifications";
 import type { Database } from "@/types/database";
 
 type ReviewRow = Database["public"]["Tables"]["deliverable_reviews"]["Row"];
@@ -262,19 +263,40 @@ export async function updateReviewStatusByToken(
     const workspace = project?.workspace;
 
     if (workspace?.owner_id) {
-      // 取得 freelancer email
       const { data: { user } } = await supabase.auth.admin.getUserById(workspace.owner_id);
       if (user?.email) {
-        await sendReviewNotification({
-          to: user.email,
-          recipientName: "Freelancer",
-          workspaceName: workspace.name ?? "ClientSpace",
-          projectName: project?.name ?? "Your project",
-          reviewTitle: review?.title ?? "Deliverable",
-          status,
-          clientName: clientName || "客戶",
-          reviewUrl: `${process.env.NEXT_PUBLIC_APP_URL}/reviews/${token}`,
-        });
+        const reviewUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reviews/${token}`;
+        const freelancerName = "Freelancer";
+        const wsName = workspace.name ?? "ClientSpace";
+        const projName = project?.name ?? "Your project";
+        const reviewTitle = review?.title ?? "Deliverable";
+        const client = clientName || "客戶";
+
+        if (status === "approved") {
+          await sendDeliverableApprovedEmail({
+            userId: workspace.owner_id,
+            to: user.email,
+            recipientName: freelancerName,
+            workspaceName: wsName,
+            reviewTitle,
+            projectName: projName,
+            clientName: client,
+            reviewUrl,
+          });
+        } else {
+          await sendRevisionRequestedEmail({
+            userId: workspace.owner_id,
+            to: user.email,
+            recipientName: freelancerName,
+            workspaceName: wsName,
+            reviewTitle,
+            projectName: projName,
+            clientName: client,
+            reviewUrl,
+            clientComment: comment?.trim() || undefined,
+          });
+        }
+
       }
     }
   } catch {

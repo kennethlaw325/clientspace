@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getWorkspace } from "./workspaces";
 import { getStripe } from "@/lib/stripe";
 import { sendNotification } from "@/lib/email";
+import { sendInvoiceSentEmail, sendPaymentReceivedEmail } from "@/lib/notifications";
 import type { Database } from "@/types/database";
 
 type InvoiceRow = Database["public"]["Tables"]["invoices"]["Row"];
@@ -233,21 +234,34 @@ export async function sendInvoice(id: string) {
     await supabase.from("invoices").update({ status: "sent" }).eq("id", id);
   }
 
-  // Send email
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const detail = paymentLink
-    ? `Your invoice <strong>${invoice.invoice_number}</strong> for <strong>$${invoice.total_amount.toFixed(2)}</strong> is ready. <a href="${paymentLink}">Pay Now</a>`
-    : `Your invoice <strong>${invoice.invoice_number}</strong> for <strong>$${invoice.total_amount.toFixed(2)}</strong> is ready.`;
-
-  await sendNotification({
-    to: invoice.clients.email,
-    recipientName: invoice.clients.name,
-    workspaceName: workspace.name,
-    projectName: invoice.projects?.name ?? "Invoice",
-    type: "status_update",
-    detail,
-    portalUrl: paymentLink ?? appUrl,
-  });
+  // Send email (React Email template)
+  try {
+    await sendInvoiceSentEmail({
+      to: invoice.clients.email,
+      recipientName: invoice.clients.name,
+      workspaceName: workspace.name,
+      invoiceNumber: invoice.invoice_number,
+      amount: `$${invoice.total_amount.toFixed(2)}`,
+      projectName: invoice.projects?.name,
+      paymentLink: paymentLink ?? undefined,
+      dueDate: invoice.due_date ?? undefined,
+    });
+  } catch {
+    // fallback to legacy email
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const detail = paymentLink
+      ? `Your invoice <strong>${invoice.invoice_number}</strong> for <strong>$${invoice.total_amount.toFixed(2)}</strong> is ready. <a href="${paymentLink}">Pay Now</a>`
+      : `Your invoice <strong>${invoice.invoice_number}</strong> for <strong>$${invoice.total_amount.toFixed(2)}</strong> is ready.`;
+    await sendNotification({
+      to: invoice.clients.email,
+      recipientName: invoice.clients.name,
+      workspaceName: workspace.name,
+      projectName: invoice.projects?.name ?? "Invoice",
+      type: "status_update",
+      detail,
+      portalUrl: paymentLink ?? appUrl,
+    });
+  }
 
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
@@ -266,6 +280,41 @@ export async function markInvoicePaid(id: string) {
   const admin = createAdminClient();
   const { error } = await admin.from("invoices").update({ status: "paid" }).eq("id", id);
   if (error) return { error: error.message };
+
+  // 通知 freelancer 收款
+  try {
+    type InvoiceWithJoins = {
+      invoice_number: string;
+      total_amount: number;
+      clients: { name: string } | null;
+      projects: { name: string } | null;
+      workspaces: { name: string; owner_id: string } | null;
+    };
+    const inv = await admin
+      .from("invoices")
+      .select("invoice_number, total_amount, clients(name), projects(name), workspaces(name, owner_id)")
+      .eq("id", id)
+      .single();
+    const invoiceData = inv.data as unknown as InvoiceWithJoins | null;
+    if (invoiceData?.workspaces?.owner_id) {
+      const { data: { user: owner } } = await admin.auth.admin.getUserById(invoiceData.workspaces.owner_id);
+      if (owner?.email) {
+        await sendPaymentReceivedEmail({
+          userId: invoiceData.workspaces.owner_id,
+          to: owner.email,
+          recipientName: "Freelancer",
+          workspaceName: invoiceData.workspaces.name,
+          invoiceNumber: invoiceData.invoice_number,
+          amount: `$${invoiceData.total_amount.toFixed(2)}`,
+          projectName: invoiceData.projects?.name,
+          clientName: invoiceData.clients?.name,
+        });
+      }
+    }
+  } catch {
+    // Email 失敗不阻止主流程
+  }
+
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
   return { success: true };

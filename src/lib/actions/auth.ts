@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { sendWelcomeEmail } from "@/lib/notifications";
 
 export async function signUp(formData: FormData) {
   const supabase = await createClient();
@@ -22,6 +23,16 @@ export async function signUp(formData: FormData) {
 
   if (error) {
     return { error: error.message };
+  }
+
+  // 發送歡迎 email（非阻塞）
+  try {
+    await sendWelcomeEmail({
+      to: email,
+      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+    });
+  } catch {
+    // Email 失敗不阻止註冊流程
   }
 
   return { success: "Check your email to confirm your account" };

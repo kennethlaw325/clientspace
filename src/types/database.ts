@@ -624,6 +624,33 @@ export type Database = {
           },
         ];
       };
+      notification_preferences: {
+        Row: {
+          id: string;
+          user_id: string;
+          event_type: string;
+          email_enabled: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          event_type: string;
+          email_enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          event_type?: string;
+          email_enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -646,3 +673,4 @@ export type InvoiceItem = Database["public"]["Tables"]["invoice_items"]["Row"];
 export type DeliverableReview = Database["public"]["Tables"]["deliverable_reviews"]["Row"];
 export type ReviewComment = Database["public"]["Tables"]["review_comments"]["Row"];
 export type ReviewToken = Database["public"]["Tables"]["review_tokens"]["Row"];
+export type NotificationPreferenceRow = Database["public"]["Tables"]["notification_preferences"]["Row"];
