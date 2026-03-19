@@ -33,11 +33,16 @@ export default async function PortalLayout({
 
   const workspace = client.workspaces;
 
+  const brandColor = workspace?.brand_color ?? "#6366f1";
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div
+      className="min-h-screen bg-slate-50"
+      style={{ "--brand-color": brandColor } as React.CSSProperties}
+    >
       <PortalHeader
         workspaceName={workspace?.name ?? ""}
-        brandColor={workspace?.brand_color ?? "#6366f1"}
+        brandColor={brandColor}
         logoUrl={workspace?.logo_url ?? null}
       />
       <main className="max-w-4xl mx-auto px-4 py-6 sm:py-8">{children}</main>
