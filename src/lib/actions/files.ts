@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { sendNotification } from "@/lib/email";
+import { logActivity } from "./activity";
 import type { Database } from "@/types/database";
 
 type FileRow = Database["public"]["Tables"]["files"]["Row"];
@@ -15,6 +16,30 @@ export async function getProjectFiles(projectId: string) {
     .order("created_at", { ascending: false });
 
   return (data ?? []) as FileRow[];
+}
+
+type FileRowWithProject = FileRow & { projects: { name: string; client_id: string } | null };
+
+export async function getClientFiles(clientId: string) {
+  const supabase = await createClient();
+
+  // Get all projects for this client first
+  const { data: projects } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("client_id", clientId);
+
+  if (!projects || projects.length === 0) return [] as FileRowWithProject[];
+
+  const projectIds = projects.map((p) => p.id);
+
+  const { data } = await supabase
+    .from("files")
+    .select("*, projects(name, client_id)")
+    .in("project_id", projectIds)
+    .order("created_at", { ascending: false });
+
+  return (data ?? []) as FileRowWithProject[];
 }
 
 export async function uploadFile(projectId: string, formData: FormData) {
@@ -103,6 +128,25 @@ export async function uploadFile(projectId: string, formData: FormData) {
     }
   } catch {
     // Email failure should not block file upload
+  }
+
+  // Log activity
+  try {
+    const { data: proj } = await supabase
+      .from("projects")
+      .select("client_id")
+      .eq("id", projectId)
+      .single() as { data: { client_id: string } | null };
+
+    await logActivity({
+      clientId: proj?.client_id ?? undefined,
+      projectId,
+      actorId: user.id,
+      eventType: "file_uploaded",
+      metadata: { file_name: file.name, file_size: file.size, version },
+    });
+  } catch {
+    // Activity logging should not block file upload
   }
 
   return { data };

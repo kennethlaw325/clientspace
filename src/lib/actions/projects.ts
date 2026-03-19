@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspace } from "./workspaces";
+import { logActivity } from "./activity";
 import type { Database } from "@/types/database";
 
 type ProjectWithRelations = Database["public"]["Tables"]["projects"]["Row"] & {
@@ -67,17 +68,41 @@ export async function createProject(formData: FormData) {
     .single();
 
   if (error) return { error: error.message };
+
+  if (data) {
+    await logActivity({
+      clientId,
+      projectId: (data as { id: string }).id,
+      eventType: "project_created",
+      metadata: { name },
+    });
+  }
+
   return { data };
 }
 
 export async function updateProjectStatus(id: string, status: string) {
   const supabase = await createClient();
+  const { data: project } = await supabase
+    .from("projects")
+    .select("client_id, name")
+    .eq("id", id)
+    .single();
+
   const { error } = await supabase
     .from("projects")
     .update({ status } as Database["public"]["Tables"]["projects"]["Update"])
     .eq("id", id);
 
   if (error) return { error: error.message };
+
+  await logActivity({
+    clientId: project?.client_id ?? undefined,
+    projectId: id,
+    eventType: "project_status_changed",
+    metadata: { name: project?.name, status },
+  });
+
   return { success: true };
 }
 

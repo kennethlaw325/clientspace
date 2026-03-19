@@ -6,12 +6,18 @@ import type { Client } from "@/types/database";
 
 export function ClientCard({ client }: { client: Client & { projects: { count: number }[] } }) {
   const projectCount = client.projects?.[0]?.count ?? 0;
+  const isArchived = !!client.archived_at;
 
   return (
     <Link href={`/clients/${client.id}`}>
-      <Card className="hover:shadow-md transition-shadow cursor-pointer">
+      <Card className={`hover:shadow-md transition-shadow cursor-pointer ${isArchived ? "opacity-60" : ""}`}>
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">{client.name}</CardTitle>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-lg truncate">{client.name}</CardTitle>
+            {isArchived && (
+              <Badge variant="outline" className="text-xs shrink-0">已封存</Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
@@ -24,7 +30,7 @@ export function ClientCard({ client }: { client: Client & { projects: { count: n
               {client.company}
             </div>
           )}
-          <Badge variant="secondary">{projectCount} project{projectCount !== 1 ? "s" : ""}</Badge>
+          <Badge variant="secondary">{projectCount} 個專案</Badge>
         </CardContent>
       </Card>
     </Link>

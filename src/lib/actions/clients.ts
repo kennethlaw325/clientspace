@@ -2,23 +2,29 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspace } from "./workspaces";
+import { logActivity } from "./activity";
 import type { Database } from "@/types/database";
 
 type ClientWithProjectCount = Database["public"]["Tables"]["clients"]["Row"] & {
   projects: { count: number }[];
 };
 
-export async function getClients() {
+export async function getClients(includeArchived = false) {
   const supabase = await createClient();
   const workspace = await getWorkspace();
   if (!workspace) return [] as ClientWithProjectCount[];
 
-  const { data } = await supabase
+  let query = supabase
     .from("clients")
     .select("*, projects(count)")
     .eq("workspace_id", workspace.id)
     .order("created_at", { ascending: false });
 
+  if (!includeArchived) {
+    query = query.is("archived_at", null);
+  }
+
+  const { data } = await query;
   return (data ?? []) as ClientWithProjectCount[];
 }
 
@@ -78,6 +84,14 @@ export async function createClientAction(formData: FormData) {
     return { error: error.message };
   }
 
+  if (data) {
+    await logActivity({
+      clientId: (data as { id: string }).id,
+      eventType: "client_created",
+      metadata: { name, email, company: company || null },
+    });
+  }
+
   return { data };
 }
 
@@ -124,5 +138,53 @@ export async function regeneratePortalToken(clientId: string) {
     .eq("id", clientId);
 
   if (error) return { error: error.message };
+  return { success: true };
+}
+
+export async function archiveClient(clientId: string) {
+  const supabase = await createClient();
+  const { data: client } = await supabase
+    .from("clients")
+    .select("name")
+    .eq("id", clientId)
+    .single();
+
+  const { error } = await supabase
+    .from("clients")
+    .update({ archived_at: new Date().toISOString() } as Database["public"]["Tables"]["clients"]["Update"])
+    .eq("id", clientId);
+
+  if (error) return { error: error.message };
+
+  await logActivity({
+    clientId,
+    eventType: "client_archived",
+    metadata: { name: client?.name },
+  });
+
+  return { success: true };
+}
+
+export async function unarchiveClient(clientId: string) {
+  const supabase = await createClient();
+  const { data: client } = await supabase
+    .from("clients")
+    .select("name")
+    .eq("id", clientId)
+    .single();
+
+  const { error } = await supabase
+    .from("clients")
+    .update({ archived_at: null } as Database["public"]["Tables"]["clients"]["Update"])
+    .eq("id", clientId);
+
+  if (error) return { error: error.message };
+
+  await logActivity({
+    clientId,
+    eventType: "client_unarchived",
+    metadata: { name: client?.name },
+  });
+
   return { success: true };
 }

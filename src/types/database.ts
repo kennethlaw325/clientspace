@@ -58,6 +58,7 @@ export type Database = {
           avatar_url: string | null;
           portal_token: string;
           last_seen_at: string | null;
+          archived_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -70,6 +71,7 @@ export type Database = {
           avatar_url?: string | null;
           portal_token?: string;
           last_seen_at?: string | null;
+          archived_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -82,6 +84,7 @@ export type Database = {
           avatar_url?: string | null;
           portal_token?: string;
           last_seen_at?: string | null;
+          archived_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -358,6 +361,50 @@ export type Database = {
           },
         ];
       };
+      activity_logs: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          client_id: string | null;
+          project_id: string | null;
+          actor_type: "freelancer" | "client" | "system";
+          actor_id: string | null;
+          event_type: string;
+          metadata: Record<string, unknown> | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          client_id?: string | null;
+          project_id?: string | null;
+          actor_type?: "freelancer" | "client" | "system";
+          actor_id?: string | null;
+          event_type: string;
+          metadata?: Record<string, unknown> | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          client_id?: string | null;
+          project_id?: string | null;
+          actor_type?: "freelancer" | "client" | "system";
+          actor_id?: string | null;
+          event_type?: string;
+          metadata?: Record<string, unknown> | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -374,3 +421,4 @@ export type Deliverable = Database["public"]["Tables"]["deliverables"]["Row"];
 export type FileRecord = Database["public"]["Tables"]["files"]["Row"];
 export type Message = Database["public"]["Tables"]["messages"]["Row"];
 export type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
+export type ActivityLog = Database["public"]["Tables"]["activity_logs"]["Row"];
