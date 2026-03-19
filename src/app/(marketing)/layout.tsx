@@ -42,23 +42,42 @@ export default function MarketingLayout({
 
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-slate-50">
-        <div className="mx-auto flex max-w-6xl flex-col sm:flex-row items-center justify-between gap-4 px-6 py-6">
-          <p className="text-sm text-slate-500">
-            &copy; 2026 ClientSpace. All rights reserved.
-          </p>
-          <div className="flex gap-6">
-            <Link
-              href="/pricing"
-              className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
-            >
-              Pricing
+        <div className="mx-auto max-w-6xl px-6 py-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <Link href="/" className="text-lg font-bold tracking-tight text-slate-900">
+              Client<span className="text-indigo-500">Space</span>
             </Link>
-            <Link
-              href="/login"
-              className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
-            >
-              Login
-            </Link>
+            <div className="flex flex-wrap justify-center gap-6">
+              <Link
+                href="/pricing"
+                className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                Pricing
+              </Link>
+              <Link
+                href="/login"
+                className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                Login
+              </Link>
+              <Link
+                href="/privacy"
+                className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                href="/terms"
+                className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                Terms of Service
+              </Link>
+            </div>
+          </div>
+          <div className="mt-6 border-t border-slate-200 pt-6 text-center">
+            <p className="text-sm text-slate-500">
+              &copy; {new Date().getFullYear()} ClientSpace. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>
