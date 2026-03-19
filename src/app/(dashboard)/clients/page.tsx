@@ -37,14 +37,21 @@ export default async function ClientsPage({
       </div>
 
       {clients.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>
-            {showArchived
-              ? "沒有已封存的客戶。"
-              : "尚無客戶。新增第一位客戶開始使用。"}
-          </p>
-        </div>
+        showArchived ? (
+          <div className="text-center py-16 text-muted-foreground">
+            <Archive className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+            <p className="text-sm">沒有已封存的客戶。</p>
+          </div>
+        ) : (
+          <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-xl">
+            <Users className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+            <h3 className="text-lg font-semibold text-slate-700 mb-1">尚無客戶</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              新增第一位客戶，開始管理你的工作關係。
+            </p>
+            <AddClientDialog />
+          </div>
+        )
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {clients.map((client) => (
@@ -55,3 +62,4 @@ export default async function ClientsPage({
     </div>
   );
 }
+export const dynamic = "force-dynamic";

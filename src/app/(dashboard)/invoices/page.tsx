@@ -100,54 +100,78 @@ export default async function InvoicesPage({
           </Link>
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden bg-white">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-slate-50 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                <th className="px-4 py-3">Invoice #</th>
-                <th className="px-4 py-3">Client</th>
-                <th className="px-4 py-3">Project</th>
-                <th className="px-4 py-3">Due Date</th>
-                <th className="px-4 py-3 text-right">Amount</th>
-                <th className="px-4 py-3">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {invoices.map((invoice) => (
-                <tr
-                  key={invoice.id}
-                  className="hover:bg-slate-50 transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/invoices/${invoice.id}`}
-                      className="font-medium text-indigo-600 hover:text-indigo-800"
-                    >
-                      {invoice.invoice_number}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-slate-700">
-                    {invoice.clients?.name ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-slate-500">
-                    {invoice.projects?.name ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-slate-500">
-                    {invoice.due_date ? formatDate(invoice.due_date) : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right font-medium">
-                    ${invoice.total_amount.toFixed(2)}
-                  </td>
-                  <td className="px-4 py-3">
+        <>
+          {/* Mobile: card layout */}
+          <div className="md:hidden space-y-3">
+            {invoices.map((invoice) => (
+              <Link key={invoice.id} href={`/invoices/${invoice.id}`}>
+                <div className="border rounded-lg bg-white p-4 hover:shadow-sm transition-shadow">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-indigo-600">{invoice.invoice_number}</span>
                     <InvoiceStatusBadge
                       status={invoice.status as "draft" | "sent" | "paid" | "overdue" | "cancelled"}
                     />
-                  </td>
+                  </div>
+                  <div className="text-sm text-slate-700 mb-1">{invoice.clients?.name ?? "—"}</div>
+                  <div className="flex items-center justify-between text-sm text-slate-500">
+                    <span>{invoice.due_date ? formatDate(invoice.due_date) : "No due date"}</span>
+                    <span className="font-medium text-slate-900">${invoice.total_amount.toFixed(2)}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop: table layout */}
+          <div className="hidden md:block border rounded-lg overflow-hidden bg-white">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  <th className="px-4 py-3">Invoice #</th>
+                  <th className="px-4 py-3">Client</th>
+                  <th className="px-4 py-3">Project</th>
+                  <th className="px-4 py-3">Due Date</th>
+                  <th className="px-4 py-3 text-right">Amount</th>
+                  <th className="px-4 py-3">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {invoices.map((invoice) => (
+                  <tr
+                    key={invoice.id}
+                    className="hover:bg-slate-50 transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/invoices/${invoice.id}`}
+                        className="font-medium text-indigo-600 hover:text-indigo-800"
+                      >
+                        {invoice.invoice_number}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {invoice.clients?.name ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-500">
+                      {invoice.projects?.name ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-500">
+                      {invoice.due_date ? formatDate(invoice.due_date) : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium">
+                      ${invoice.total_amount.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <InvoiceStatusBadge
+                        status={invoice.status as "draft" | "sent" | "paid" | "overdue" | "cancelled"}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

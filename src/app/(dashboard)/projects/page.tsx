@@ -16,9 +16,13 @@ export default async function ProjectsPage() {
         <AddProjectDialog clients={clientOptions} />
       </div>
       {projects.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No projects yet. Create your first project to get started.</p>
+        <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-xl">
+          <FolderOpen className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+          <h3 className="text-lg font-semibold text-slate-700 mb-1">No projects yet</h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            Create your first project to start collaborating with clients.
+          </p>
+          <AddProjectDialog clients={clientOptions} />
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { FolderOpen, Users, Settings, LayoutDashboard, Menu } from "lucide-react";
+import { FolderOpen, Users, Settings, LayoutDashboard, Menu, FileText, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -16,6 +16,8 @@ import {
 const navItems = [
   { href: "/projects", label: "Projects", icon: FolderOpen },
   { href: "/clients", label: "Clients", icon: Users },
+  { href: "/invoices", label: "Invoices", icon: FileText },
+  { href: "/billing", label: "Billing", icon: CreditCard },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
