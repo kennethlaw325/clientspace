@@ -3,7 +3,6 @@ import { ClientCard } from "@/components/dashboard/client-card";
 import { AddClientDialog } from "@/components/dashboard/add-client-dialog";
 import { Users, Archive } from "lucide-react";
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default async function ClientsPage({
@@ -23,7 +22,12 @@ export default async function ClientsPage({
         <div className="flex items-center gap-2">
           <Link
             href={showArchived ? "/clients" : "/clients?archived=1"}
-            className={cn(buttonVariants({ variant: showArchived ? "secondary" : "ghost", size: "sm" }))}
+            className={cn(
+              "inline-flex shrink-0 items-center justify-center rounded-lg text-sm font-medium whitespace-nowrap transition-all h-7 gap-1 px-2.5",
+              showArchived
+                ? "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                : "hover:bg-muted hover:text-foreground"
+            )}
           >
             <Archive className="h-4 w-4 mr-1.5" />
             {showArchived ? "顯示使用中" : "顯示已封存"}
