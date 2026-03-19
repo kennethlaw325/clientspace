@@ -305,6 +305,59 @@ export type Database = {
           },
         ];
       };
+      subscriptions: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          stripe_customer_id: string;
+          stripe_subscription_id: string | null;
+          stripe_price_id: string | null;
+          plan: "free" | "starter" | "pro";
+          status: "active" | "trialing" | "past_due" | "canceled" | "incomplete" | "unpaid";
+          current_period_start: string | null;
+          current_period_end: string | null;
+          cancel_at_period_end: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          stripe_customer_id: string;
+          stripe_subscription_id?: string | null;
+          stripe_price_id?: string | null;
+          plan?: "free" | "starter" | "pro";
+          status?: "active" | "trialing" | "past_due" | "canceled" | "incomplete" | "unpaid";
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          stripe_customer_id?: string;
+          stripe_subscription_id?: string | null;
+          stripe_price_id?: string | null;
+          plan?: "free" | "starter" | "pro";
+          status?: "active" | "trialing" | "past_due" | "canceled" | "incomplete" | "unpaid";
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: true;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -320,3 +373,4 @@ export type Project = Database["public"]["Tables"]["projects"]["Row"];
 export type Deliverable = Database["public"]["Tables"]["deliverables"]["Row"];
 export type FileRecord = Database["public"]["Tables"]["files"]["Row"];
 export type Message = Database["public"]["Tables"]["messages"]["Row"];
+export type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];

@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { FolderOpen, Users, Settings, LayoutDashboard } from "lucide-react";
+import { FolderOpen, Users, Settings, LayoutDashboard, CreditCard } from "lucide-react";
 
 const navItems = [
   { href: "/projects", label: "Projects", icon: FolderOpen },
   { href: "/clients", label: "Clients", icon: Users },
+  { href: "/billing", label: "Billing", icon: CreditCard },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
