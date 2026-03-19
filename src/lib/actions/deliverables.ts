@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { sendNotification } from "@/lib/email";
+import type { Database } from "@/types/database";
 
 export async function createDeliverable(projectId: string, formData: FormData) {
   const supabase = await createClient();
@@ -16,13 +17,13 @@ export async function createDeliverable(projectId: string, formData: FormData) {
     .select("sort_order")
     .eq("project_id", projectId)
     .order("sort_order", { ascending: false })
-    .limit(1);
+    .limit(1) as { data: { sort_order: number }[] | null };
 
   const sortOrder = existing?.[0] ? existing[0].sort_order + 1 : 0;
 
   const { data, error } = await supabase
     .from("deliverables")
-    .insert({ project_id: projectId, title, description: description || null, sort_order: sortOrder })
+    .insert({ project_id: projectId, title, description: description || null, sort_order: sortOrder } as Database["public"]["Tables"]["deliverables"]["Insert"])
     .select()
     .single();
 
@@ -34,7 +35,7 @@ export async function updateDeliverableStatus(id: string, status: string) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("deliverables")
-    .update({ status })
+    .update({ status } as Database["public"]["Tables"]["deliverables"]["Update"])
     .eq("id", id);
 
   if (error) return { error: error.message };

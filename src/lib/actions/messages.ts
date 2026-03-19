@@ -2,6 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { sendNotification } from "@/lib/email";
+import type { Database } from "@/types/database";
+
+type MessageRow = Database["public"]["Tables"]["messages"]["Row"];
 
 export async function getProjectMessages(projectId: string) {
   const supabase = await createClient();
@@ -12,19 +15,22 @@ export async function getProjectMessages(projectId: string) {
     .is("parent_id", null)
     .order("created_at", { ascending: true });
 
-  if (!data) return [];
+  const messages = (data ?? []) as MessageRow[];
+  if (messages.length === 0) return [];
 
   // Fetch replies for each message
-  const messageIds = data.map((m) => m.id);
-  const { data: replies } = await supabase
+  const messageIds = messages.map((m) => m.id);
+  const { data: repliesData } = await supabase
     .from("messages")
     .select("*")
     .in("parent_id", messageIds)
     .order("created_at", { ascending: true });
 
-  return data.map((msg) => ({
+  const replies = (repliesData ?? []) as MessageRow[];
+
+  return messages.map((msg) => ({
     ...msg,
-    replies: replies?.filter((r) => r.parent_id === msg.id) ?? [],
+    replies: replies.filter((r) => r.parent_id === msg.id),
   }));
 }
 
@@ -42,11 +48,11 @@ export async function sendMessage(projectId: string, formData: FormData) {
     .from("messages")
     .insert({
       project_id: projectId,
-      sender_type: "freelancer",
+      sender_type: "freelancer" as const,
       sender_id: user.id,
       content: content.trim(),
       parent_id: parentId || null,
-    })
+    } as Database["public"]["Tables"]["messages"]["Insert"])
     .select()
     .single();
 

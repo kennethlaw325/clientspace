@@ -2,6 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { sendNotification } from "@/lib/email";
+import type { Database } from "@/types/database";
+
+type FileRow = Database["public"]["Tables"]["files"]["Row"];
 
 export async function getProjectFiles(projectId: string) {
   const supabase = await createClient();
@@ -11,7 +14,7 @@ export async function getProjectFiles(projectId: string) {
     .eq("project_id", projectId)
     .order("created_at", { ascending: false });
 
-  return data ?? [];
+  return (data ?? []) as FileRow[];
 }
 
 export async function uploadFile(projectId: string, formData: FormData) {
@@ -32,7 +35,7 @@ export async function uploadFile(projectId: string, formData: FormData) {
     .from("projects")
     .select("workspace_id")
     .eq("id", projectId)
-    .single();
+    .single() as { data: { workspace_id: string } | null };
 
   if (!project) return { error: "Project not found" };
 
@@ -52,7 +55,7 @@ export async function uploadFile(projectId: string, formData: FormData) {
     .eq("project_id", projectId)
     .eq("file_name", file.name)
     .order("version", { ascending: false })
-    .limit(1);
+    .limit(1) as { data: { version: number }[] | null };
 
   const version = existing?.[0] ? existing[0].version + 1 : 1;
 
@@ -61,14 +64,14 @@ export async function uploadFile(projectId: string, formData: FormData) {
     .from("files")
     .insert({
       project_id: projectId,
-      uploaded_by_type: "freelancer",
+      uploaded_by_type: "freelancer" as const,
       uploaded_by_id: user.id,
       file_name: file.name,
       file_size: file.size,
       mime_type: file.type || null,
       storage_path: storagePath,
       version,
-    })
+    } as Database["public"]["Tables"]["files"]["Insert"])
     .select()
     .single();
 

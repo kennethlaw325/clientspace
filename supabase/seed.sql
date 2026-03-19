@@ -1,0 +1,3 @@
+-- Seed data for development
+-- Note: Requires a user to exist in auth.users first (created via signup flow)
+-- This file is intentionally empty for MVP - seed data should be created through the app
